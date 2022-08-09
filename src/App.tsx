@@ -1,5 +1,6 @@
 import React from 'react';
 import StudentTable from './components/StudentTable';
+import StudentStore from './StudentStore';
 import { styled } from '@mui/material/styles';
 
 
@@ -9,9 +10,10 @@ const S_TableWrapper = styled('div')`
 `;
 
 function App() {
+  const studentStore = new StudentStore();
   return (
     <S_TableWrapper>
-      <StudentTable />
+      <StudentTable store={studentStore} />
     </S_TableWrapper>
   );
 }
