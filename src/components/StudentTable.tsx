@@ -144,9 +144,14 @@ function StudentTable({ store }:any) {
           <Button autoFocus onClick={() => store.setToDeleteStudent(null)}>
             Cancel
           </Button>
-          <Button autoFocus onClick={() => {
-            store.deleteStudent(store.toDeleteStudent);
-            store.setToDeleteStudent(null);
+          <Button onClick={() => {
+            let p = new Promise((resolve) => {
+              store.deleteStudent(store.toDeleteStudent);
+              resolve(true);
+            });
+            p.then(() => store.setToDeleteStudent(null))
+            .catch(e => console.error(e))
+            .finally(() => console.log("delete process ended"))
           }}>
             Delete
           </Button>
