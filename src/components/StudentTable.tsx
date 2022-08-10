@@ -1,5 +1,6 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
+import { css } from '@emotion/css';
 
 //table
 import Table from '@mui/material/Table';
@@ -13,6 +14,10 @@ import Paper from '@mui/material/Paper';
 //modal, dialog
 import Modal from '@mui/material/Modal';
 import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import Box from '@mui/material/Box';
 
 //icons
 import IconEdit from '@mui/icons-material/Edit';
@@ -21,11 +26,28 @@ import IconDelete from '@mui/icons-material/Delete';
 //misc
 import Button from '@mui/material/Button';
 import { IStudent, IExchangeStudent } from '../datasets/students';
+import ModifyForm from './ModifyForm';
 
 //styles
 const CSS_HeadTableCells = {
   fontWeight: 'bold',
 }
+
+const styleModal = css`
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 500px;
+  background-color: #fff;
+  border: 2px solid #000;
+  box-shadow: 24px;
+  padding: 0 2rem;
+  padding-bottom: 2rem;
+  overflow: scroll;
+  max-width:calc(100% - 80px);
+  max-height:calc(100% - 80px);
+`;
 
 //functions
 
@@ -36,7 +58,7 @@ const CSS_HeadTableCells = {
  * used to have leading zeroes and benefit with better
  * readability in that case.
  */
-const getFormattedBirthdate = (date: any) => {
+const getFormattedBirthdate = (date: string) => {
   if (!date) return;
   let dateSrc = new Date(date);
   let d: any = dateSrc.getDate();
@@ -44,17 +66,16 @@ const getFormattedBirthdate = (date: any) => {
   let m: any = dateSrc.getMonth() + 1;
   m = m > 9 ? String(m) : '0' + String(m);
   let y = dateSrc.getFullYear();
-  return d + '.' + m + '.' + y;
+  let formattedDate = d + '.' + m + '.' + y;
+  if (formattedDate.indexOf('NaN') != -1) {
+    formattedDate = 'Invalid Date!';
+  }
+  return formattedDate;
 }
 
-const studentIsExternal = (student: any) => {
+const studentIsExternal = (student: IStudent | IExchangeStudent) => {
   return 'extId' in student;
 }
-
-// components
-const modalContents = <div>
-  this is stuff
-</div>
 
 function StudentTable({ store }:any) {
   return (
@@ -72,7 +93,7 @@ function StudentTable({ store }:any) {
           </TableHead>
           <TableBody>
             {
-              store.students?.map((data:IStudent | IExchangeStudent) => <TableRow
+              store.filteredList?.map((data:IStudent | IExchangeStudent) => <TableRow
                 key={data.name + data.class + data.birthdate}
               >
                 <TableCell>{data.name}</TableCell>
@@ -83,10 +104,12 @@ function StudentTable({ store }:any) {
                 <TableCell>{data.gender}</TableCell>
                 <TableCell sx={{ minWidth: '9rem', textAlign: 'right' }}>
                   {!studentIsExternal(data) && <React.Fragment>
-                    <Button>
+                    <Button onClick={() => store.setEditedStudent(data)}>
                       <IconEdit />
                     </Button>
-                    <Button>
+                    <Button onClick={() => {
+                      store.setToDeleteStudent(data);
+                    }}>
                       <IconDelete />
                     </Button>
                   </React.Fragment>}
@@ -96,6 +119,39 @@ function StudentTable({ store }:any) {
           </TableBody>
         </Table>
       </TableContainer>
+      <Modal
+        open={!!store.editedStudent}
+        onClose={() => store.setEditedStudent(null)}
+      >
+        <Box className={styleModal}>
+          <ModifyForm
+            store={store}
+            name={store.editedStudent?.name}
+            classroom={store.editedStudent?.class}
+            birthdate={store.editedStudent?.birthdate}
+            gender={store.editedStudent?.gender}
+          />
+        </Box>
+      </Modal>
+      <Dialog
+        open={!!store.toDeleteStudent}
+      >
+        <DialogTitle>Delete Student</DialogTitle>
+        <DialogContent>
+          Do you really want to delete student '{store.toDeleteStudent?.name}' ?
+        </DialogContent>
+        <DialogActions>
+          <Button autoFocus onClick={() => store.setToDeleteStudent(null)}>
+            Cancel
+          </Button>
+          <Button autoFocus onClick={() => {
+            store.deleteStudent(store.toDeleteStudent);
+            store.setToDeleteStudent(null);
+          }}>
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </React.Fragment>
   );
 }
